@@ -18,27 +18,32 @@
             overflow: hidden;
             position: fixed;
             touch-action: none;
+            background-color: #ffebf5;
         }
         
         body {
-            background-color: #ffebf5;
             color: #ff1493;
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-between;
-            padding: env(safe-area-inset-top, 10px) env(safe-area-inset-right, 10px) calc(env(safe-area-inset-bottom, 10px) + 10px) env(safe-area-inset-left, 10px);
+            justify-content: flex-start;
+            padding-top: env(safe-area-inset-top, 10px);
+            padding-bottom: calc(env(safe-area-inset-bottom, 10px) + 10px);
+            /* Éviter les problèmes de marge sur Safari */
+            -webkit-margin-before: 0;
+            -webkit-margin-after: 0;
+            -webkit-margin-start: 0;
+            -webkit-margin-end: 0;
         }
 
         #game-container {
             width: 100%;
-            max-width: 350px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            flex: 1;
-            padding: 10px 0;
+            max-width: 350px;
+            padding: 0 10px;
         }
 
         #stats {
@@ -46,32 +51,37 @@
             justify-content: space-between;
             width: 100%;
             padding: 5px 10px;
+            margin-bottom: 10px;
             font-size: 18px;
             font-weight: bold;
             color: #ff1493;
         }
 
-        #game-board-container {
-            width: 100%;
+        #game-border {
             position: relative;
+            width: 100%;
             border: 2px solid #ff69b4;
             border-radius: 8px;
             background-color: #feedf6;
             box-shadow: 0 4px 20px rgba(255, 105, 180, 0.4);
             overflow: hidden;
+            /* Forcer un ratio précis */
+            padding-bottom: 200%; /* Ratio 1:2 (10:20) */
         }
 
         #game-board {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
+            height: 100%;
             display: grid;
             grid-template-columns: repeat(10, 1fr);
             grid-template-rows: repeat(20, 1fr);
-            aspect-ratio: 10/20;
         }
 
         .cell {
             border: 1px solid rgba(255, 105, 180, 0.2);
-            aspect-ratio: 1/1;
         }
 
         .filled {
@@ -86,7 +96,7 @@
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             padding: 10px;
-            margin-top: auto;
+            margin-top: 15px;
         }
 
         .control-btn {
@@ -99,6 +109,7 @@
             border-radius: 15px;
             touch-action: manipulation;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            -webkit-appearance: none;
         }
 
         .control-btn:active {
@@ -145,6 +156,7 @@
             color: white;
             box-shadow: 0 0 25px rgba(255, 105, 180, 0.8);
             z-index: 200;
+            width: 80%;
         }
         
         #game-over h2 {
@@ -203,6 +215,7 @@
             font-size: 16px;
             border-radius: 30px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            -webkit-appearance: none;
         }
     </style>
 </head>
@@ -212,7 +225,7 @@
             <div>Score: <span id="score">0</span></div>
             <div>Level: <span id="level">1</span></div>
         </div>
-        <div id="game-board-container">
+        <div id="game-border">
             <div id="game-board"></div>
             <div id="game-over">
                 <h2>Geneviève je t'aime !</h2>
@@ -260,7 +273,7 @@
         let gameOver = false;
         let lastTapTime = 0;
         let isFirstPiece = true;
-        let debugMode = false;
+        let isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
         // DOM Elements
         const gameBoard = document.getElementById('game-board');
@@ -271,19 +284,20 @@
         const restartBtn = document.getElementById('restart-btn');
         const loveMessage = document.getElementById('love-message');
 
-        // Fonction de débogage
-        function log(message) {
-            if (debugMode) {
-                console.log(message);
-            }
-        }
-
         // Initialize the game
         function initGame() {
             createBoard();
             setupControls();
-            adjustGameBoard();
             startGame();
+            
+            // Sur iOS, le premier focus sur l'input peut déclencher un zoom
+            if (isSafari) {
+                document.addEventListener('touchstart', (e) => {
+                    if (e.touches.length > 1) {
+                        e.preventDefault();
+                    }
+                }, { passive: false });
+            }
         }
 
         // Create the game board cells
@@ -300,45 +314,38 @@
             }
         }
 
-        // Adjust game board to make sure it fits correctly
-        function adjustGameBoard() {
-            const gameBoardContainer = document.getElementById('game-board-container');
-            
-            // Make sure the game board has the correct aspect ratio
-            gameBoard.style.display = 'grid';
-            gameBoard.style.gridTemplateColumns = `repeat(${GRID_WIDTH}, 1fr)`;
-            gameBoard.style.gridTemplateRows = `repeat(${GRID_HEIGHT}, 1fr)`;
-            
-            // Force the cells to have equal width and height
-            const cellWidth = gameBoard.offsetWidth / GRID_WIDTH;
-            const cells = document.querySelectorAll('.cell');
-            cells.forEach(cell => {
-                cell.style.width = `${cellWidth}px`;
-                cell.style.height = `${cellWidth}px`;
-            });
-            
-            // Ensure container height matches the grid
-            gameBoardContainer.style.height = `${cellWidth * GRID_HEIGHT}px`;
-        }
-
         // Setup control buttons
         function setupControls() {
-            document.getElementById('rotate-btn').addEventListener('touchstart', (e) => {
+            const addEvent = (element, eventType, handler) => {
+                element.addEventListener(eventType, handler, { passive: false });
+            };
+            
+            const rotateBtn = document.getElementById('rotate-btn');
+            const leftBtn = document.getElementById('left-btn');
+            const rightBtn = document.getElementById('right-btn');
+            const downBtn = document.getElementById('down-btn');
+            const dropBtn = document.getElementById('drop-btn');
+            
+            // Rotation
+            addEvent(rotateBtn, 'touchstart', (e) => {
                 e.preventDefault();
                 rotateCurrentPiece();
             });
 
-            document.getElementById('left-btn').addEventListener('touchstart', (e) => {
+            // Gauche
+            addEvent(leftBtn, 'touchstart', (e) => {
                 e.preventDefault();
                 moveCurrentPiece(-1, 0);
             });
 
-            document.getElementById('right-btn').addEventListener('touchstart', (e) => {
+            // Droite
+            addEvent(rightBtn, 'touchstart', (e) => {
                 e.preventDefault();
                 moveCurrentPiece(1, 0);
             });
 
-            document.getElementById('down-btn').addEventListener('touchstart', (e) => {
+            // Bas (avec détection de double-tap)
+            addEvent(downBtn, 'touchstart', (e) => {
                 e.preventDefault();
                 const now = Date.now();
                 if (now - lastTapTime < 300) {
@@ -349,35 +356,30 @@
                 lastTapTime = now;
             });
 
-            document.getElementById('drop-btn').addEventListener('touchstart', (e) => {
+            // Drop
+            addEvent(dropBtn, 'touchstart', (e) => {
                 e.preventDefault();
                 dropCurrentPiece();
             });
 
-            // Correction du bouton rejouer avec une meilleure gestion des événements
-            restartBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                startGame();
-            }, { passive: false });
-            
-            restartBtn.addEventListener('click', (e) => {
+            // Bouton Rejouer
+            addEvent(restartBtn, 'touchstart', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 startGame();
             });
-
-            // For testing on desktop
+            
+            // Pour le test sur desktop
             document.addEventListener('keydown', handleKeyPress);
         }
 
         function handleKeyPress(e) {
-            if (gameOver) {
-                if (e.key === 'Enter') {
-                    startGame();
-                }
+            if (gameOver && e.key === 'Enter') {
+                startGame();
                 return;
             }
+            
+            if (gameOver) return;
             
             switch(e.key) {
                 case 'ArrowUp': rotateCurrentPiece(); break;
@@ -385,13 +387,11 @@
                 case 'ArrowRight': moveCurrentPiece(1, 0); break;
                 case 'ArrowDown': moveCurrentPiece(0, 1); break;
                 case ' ': dropCurrentPiece(); break;
-                case 'd': debugMode = !debugMode; console.log("Debug mode: " + debugMode); break;
             }
         }
 
         // Start a new game
         function startGame() {
-            log("Starting new game");
             grid = createEmptyGrid();
             score = 0;
             level = 1;
@@ -399,7 +399,7 @@
             gameOver = false;
             isFirstPiece = true;
             
-            // S'assurer que toutes les cellules sont vides visuellement
+            // Effacer toutes les cellules
             clearAllCells();
             
             updateScore();
@@ -410,7 +410,7 @@
             
             gameOverElement.style.display = 'none';
             
-            // Show welcome message
+            // Message de bienvenue
             showLoveMessage("Tetris pour Geneviève ❤️");
         }
 
@@ -459,7 +459,7 @@
             if (gameOver) return;
             
             if (!moveCurrentPiece(0, 1)) {
-                // Piece can't move down - lock it and create a new one
+                // La pièce ne peut plus descendre
                 lockPiece();
                 
                 const linesCleared = clearLines();
@@ -467,7 +467,7 @@
                     updateScore(linesCleared);
                 }
                 
-                isFirstPiece = false; // Première pièce déjà placée
+                isFirstPiece = false;
                 
                 if (!createNewPiece()) {
                     clearInterval(gameInterval);
@@ -498,7 +498,7 @@
                 updateScore(linesCleared);
             }
             
-            isFirstPiece = false; // Première pièce déjà placée
+            isFirstPiece = false;
             createNewPiece();
         }
 
@@ -540,7 +540,7 @@
             
             currentPiece.shape = rotatedShape;
             
-            // Try to adjust if the rotation pushes the piece off the grid
+            // Ajuster si la rotation pousse la pièce hors de la grille
             let adjustment = 0;
             if (currentPosition.x + rotatedShape[0].length > GRID_WIDTH) {
                 adjustment = GRID_WIDTH - (currentPosition.x + rotatedShape[0].length);
@@ -551,7 +551,7 @@
                 drawPiece();
                 return true;
             } else {
-                // Revert back if rotation is not possible
+                // Revenir à la forme originale si la rotation n'est pas possible
                 currentPiece.shape = originalShape;
                 drawPiece();
                 return false;
@@ -567,15 +567,15 @@
                     const newX = currentPosition.x + x + deltaX;
                     const newY = currentPosition.y + y + deltaY;
                     
-                    // Check boundaries
+                    // Vérifier les limites
                     if (newX < 0 || newX >= GRID_WIDTH || newY >= GRID_HEIGHT) {
                         return false;
                     }
                     
-                    // Skip check if piece is above the grid
+                    // Ignorer la vérification si la pièce est au-dessus de la grille
                     if (newY < 0) continue;
                     
-                    // Check collision with locked pieces
+                    // Vérifier la collision avec les pièces verrouillées
                     if (grid[newY][newX]) {
                         return false;
                     }
@@ -626,8 +626,6 @@
 
         // Lock the current piece in the grid
         function lockPiece() {
-            log("Locking piece at position: " + JSON.stringify(currentPosition));
-            
             for (let y = 0; y < currentPiece.shape.length; y++) {
                 for (let x = 0; x < currentPiece.shape[y].length; x++) {
                     if (currentPiece.shape[y][x]) {
@@ -636,23 +634,9 @@
                         
                         if (boardY >= 0 && boardY < GRID_HEIGHT && boardX >= 0 && boardX < GRID_WIDTH) {
                             grid[boardY][boardX] = currentPiece.color;
-                            log(`Cell locked at [${boardX}, ${boardY}]`);
                         }
                     }
                 }
-            }
-            
-            // Pour le débogage: afficher la grille actuelle
-            if (debugMode) {
-                let gridDebug = "";
-                for (let y = 0; y < GRID_HEIGHT; y++) {
-                    let row = "";
-                    for (let x = 0; x < GRID_WIDTH; x++) {
-                        row += grid[y][x] ? "X" : ".";
-                    }
-                    gridDebug += row + "\n";
-                }
-                log("Grid state after locking:\n" + gridDebug);
             }
             
             redrawBoard();
@@ -665,17 +649,16 @@
             for (let y = GRID_HEIGHT - 1; y >= 0; y--) {
                 if (grid[y].every(cell => cell !== 0)) {
                     linesCleared++;
-                    log(`Complete line found: ${y}`);
                     
-                    // Remove the completed line
+                    // Supprimer la ligne complétée et déplacer les lignes au-dessus
                     for (let tempY = y; tempY > 0; tempY--) {
                         grid[tempY] = [...grid[tempY - 1]];
                     }
                     
-                    // Add a new empty line at the top
+                    // Ajouter une nouvelle ligne vide en haut
                     grid[0] = Array(GRID_WIDTH).fill(0);
                     
-                    // We need to check this line again since it now contains content from above
+                    // Il faut vérifier cette ligne à nouveau
                     y++;
                 }
             }
@@ -803,30 +786,8 @@
             }
         }
 
-        // Fix iOS height issues
-        function fixIOSHeight() {
-            document.body.style.height = window.innerHeight + 'px';
-            adjustGameBoard();
-        }
-
-        // Handle resize and orientation changes
-        window.addEventListener('resize', fixIOSHeight);
-        window.addEventListener('orientationchange', () => {
-            setTimeout(fixIOSHeight, 300); // Attendre un peu après le changement d'orientation
-        });
-
-        // Start the game when the page loads
-        window.addEventListener('DOMContentLoaded', () => {
-            initGame();
-            fixIOSHeight();
-        });
-
-        // Prevent Safari from doing pull-to-refresh
-        document.addEventListener('touchmove', (e) => {
-            if (e.touches.length > 1) {
-                e.preventDefault();
-            }
-        }, { passive: false });
+        // Démarrer le jeu quand la page est chargée
+        window.addEventListener('DOMContentLoaded', initGame);
     </script>
 </body>
 </html>
