@@ -258,6 +258,8 @@
         let level = 1;
         let gameSpeed = 800;
         let gameOver = false;
+        let lastDownTapTime = 0;
+        const doubleTapThreshold = 300; // millisecondes
 
         // Éléments DOM
         const gameBoard = document.getElementById('game-board');
@@ -329,7 +331,17 @@
             
             downBtn.addEventListener('touchstart', function(e) {
                 e.preventDefault();
-                movePieceDown();
+                
+                // Vérifier le double tap pour faire tomber la pièce rapidement
+                const now = Date.now();
+                if (now - lastDownTapTime < doubleTapThreshold) {
+                    // Double tap détecté
+                    dropPiece();
+                } else {
+                    // Simple tap
+                    movePieceDown();
+                }
+                lastDownTapTime = now;
             });
             
             dropBtn.addEventListener('touchstart', function(e) {
@@ -353,7 +365,18 @@
                 case 'ArrowUp': rotatePiece(); break;
                 case 'ArrowLeft': movePieceLeft(); break;
                 case 'ArrowRight': movePieceRight(); break;
-                case 'ArrowDown': movePieceDown(); break;
+                case 'ArrowDown': 
+                    // Vérifier le double appui pour faire tomber la pièce rapidement
+                    const now = Date.now();
+                    if (now - lastDownTapTime < doubleTapThreshold) {
+                        // Double appui détecté
+                        dropPiece();
+                    } else {
+                        // Simple appui
+                        movePieceDown();
+                    }
+                    lastDownTapTime = now;
+                    break;
                 case ' ': dropPiece(); break;
             }
         }
@@ -468,6 +491,9 @@
         }
 
         function isValidPosition() {
+            // S'assurer que currentPiece existe
+            if (!currentPiece || !currentPiece.shape) return false;
+            
             for (let y = 0; y < currentPiece.shape.length; y++) {
                 for (let x = 0; x < currentPiece.shape[y].length; x++) {
                     if (!currentPiece.shape[y][x]) continue;
@@ -475,11 +501,14 @@
                     const boardX = currentPiecePos.x + x;
                     const boardY = currentPiecePos.y + y;
                     
+                    // Vérifier les bords et le bas de la grille
                     if (boardX < 0 || boardX >= GRID_WIDTH || boardY >= GRID_HEIGHT) {
                         return false;
                     }
                     
-                    if (boardY >= 0 && grid[boardY][boardX]) {
+                    // Vérifier la collision avec des pièces existantes
+                    // S'assurer que boardY est valide et qu'il n'y a pas de collision avec une pièce existante
+                    if (boardY >= 0 && grid[boardY] && grid[boardY][boardX]) {
                         return false;
                     }
                 }
@@ -488,6 +517,9 @@
         }
 
         function drawPiece() {
+            // S'assurer que currentPiece existe
+            if (!currentPiece || !currentPiece.shape) return;
+            
             for (let y = 0; y < currentPiece.shape.length; y++) {
                 for (let x = 0; x < currentPiece.shape[y].length; x++) {
                     if (!currentPiece.shape[y][x]) continue;
@@ -495,7 +527,8 @@
                     const boardX = currentPiecePos.x + x;
                     const boardY = currentPiecePos.y + y;
                     
-                    if (boardY >= 0) {
+                    // Ne dessiner que les cellules visibles et valides
+                    if (boardY >= 0 && boardY < GRID_HEIGHT && boardX >= 0 && boardX < GRID_WIDTH) {
                         const cell = document.querySelector(`.cell[data-x="${boardX}"][data-y="${boardY}"]`);
                         if (cell) {
                             cell.style.backgroundColor = currentPiece.color;
@@ -507,6 +540,9 @@
         }
 
         function erasePiece() {
+            // S'assurer que currentPiece existe
+            if (!currentPiece || !currentPiece.shape) return;
+            
             for (let y = 0; y < currentPiece.shape.length; y++) {
                 for (let x = 0; x < currentPiece.shape[y].length; x++) {
                     if (!currentPiece.shape[y][x]) continue;
@@ -514,7 +550,8 @@
                     const boardX = currentPiecePos.x + x;
                     const boardY = currentPiecePos.y + y;
                     
-                    if (boardY >= 0) {
+                    // Ne traiter que les cellules visibles et valides
+                    if (boardY >= 0 && boardY < GRID_HEIGHT && boardX >= 0 && boardX < GRID_WIDTH) {
                         const cell = document.querySelector(`.cell[data-x="${boardX}"][data-y="${boardY}"]`);
                         if (cell) {
                             cell.style.backgroundColor = '';
@@ -526,6 +563,9 @@
         }
 
         function lockPiece() {
+            // S'assurer que currentPiece existe
+            if (!currentPiece || !currentPiece.shape) return;
+            
             for (let y = 0; y < currentPiece.shape.length; y++) {
                 for (let x = 0; x < currentPiece.shape[y].length; x++) {
                     if (!currentPiece.shape[y][x]) continue;
@@ -533,7 +573,8 @@
                     const boardX = currentPiecePos.x + x;
                     const boardY = currentPiecePos.y + y;
                     
-                    if (boardY >= 0) {
+                    // S'assurer que nous ne travaillons qu'avec des coordonnées valides
+                    if (boardY >= 0 && boardY < GRID_HEIGHT && boardX >= 0 && boardX < GRID_WIDTH) {
                         grid[boardY][boardX] = currentPiece.color;
                     }
                 }
@@ -545,16 +586,21 @@
             let linesCleared = 0;
             
             for (let y = GRID_HEIGHT - 1; y >= 0; y--) {
-                if (grid[y].every(cell => cell !== 0)) {
+                // Vérifier si toutes les cellules de la ligne sont remplies
+                if (grid[y] && grid[y].every(cell => cell !== 0)) {
                     linesCleared++;
                     
+                    // Supprimer la ligne et faire descendre les lignes au-dessus
                     for (let y2 = y; y2 > 0; y2--) {
                         grid[y2] = [...grid[y2-1]];
                     }
                     
+                    // Nouvelle ligne vide en haut
                     grid[0] = Array(GRID_WIDTH).fill(0);
                     redrawBoard();
                     showLoveMessage();
+                    
+                    // Vérifier à nouveau la même ligne (qui contient maintenant les cellules d'au-dessus)
                     y++;
                 }
             }
@@ -591,7 +637,7 @@
                 for (let x = 0; x < GRID_WIDTH; x++) {
                     const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
                     if (cell) {
-                        if (grid[y][x]) {
+                        if (grid[y] && grid[y][x]) {
                             cell.style.backgroundColor = grid[y][x];
                             cell.classList.add('filled');
                         } else {
@@ -605,7 +651,7 @@
 
         function updateScore(linesCleared = 0) {
             if (linesCleared > 0) {
-                const points = [0, 100, 300, 500, 800][linesCleared] * level;
+                const points = [0, 100, 300, 500, 800][Math.min(linesCleared, 4)] * level;
                 score += points;
                 
                 const newLevel = Math.floor(score / 500) + 1;
@@ -649,7 +695,7 @@
         }
 
         function rotatePiece() {
-            if (gameOver) return;
+            if (gameOver || !currentPiece || !currentPiece.shape) return;
             
             erasePiece();
             
@@ -678,7 +724,7 @@
         }
 
         function movePieceLeft() {
-            if (gameOver) return;
+            if (gameOver || !currentPiece) return;
             
             erasePiece();
             currentPiecePos.x--;
@@ -691,7 +737,7 @@
         }
 
         function movePieceRight() {
-            if (gameOver) return;
+            if (gameOver || !currentPiece) return;
             
             erasePiece();
             currentPiecePos.x++;
@@ -704,7 +750,7 @@
         }
 
         function movePieceDown() {
-            if (gameOver) return;
+            if (gameOver || !currentPiece) return;
             
             erasePiece();
             currentPiecePos.y++;
@@ -726,7 +772,7 @@
         }
 
         function dropPiece() {
-            if (gameOver) return;
+            if (gameOver || !currentPiece) return;
             
             erasePiece();
             
