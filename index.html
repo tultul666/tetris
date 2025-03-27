@@ -102,20 +102,41 @@
         <button id="right-btn" class="control-btn">→</button>
         <button id="drop-btn" class="control-btn">DROP</button>
     </div>
-    <script>
-        function setViewportHeight() {
-            let vh = window.innerHeight * 0.01;
-            document.documentElement.style.setProperty('--vh', `${vh}px`);
-        }
-        window.addEventListener('resize', setViewportHeight);
-        window.addEventListener('orientationchange', setViewportHeight);
-        window.addEventListener('load', setViewportHeight);
 
-        document.addEventListener("DOMContentLoaded", () => {
-            document.querySelectorAll('.control-btn').forEach(button => {
-                button.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
-            });
+    <script>
+    function setViewportHeight() {
+        let vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+    window.addEventListener('resize', setViewportHeight);
+    window.addEventListener('orientationchange', setViewportHeight);
+    window.addEventListener('load', setViewportHeight);
+
+    document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll('.control-btn').forEach(button => {
+            button.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
         });
+        init();
+    });
+
+    // Code de jeu minimal
+    const gameBoard = document.getElementById('game-board');
+    const GRID_WIDTH = 10;
+    const GRID_HEIGHT = 20;
+
+    function init() {
+        createGameBoard();
+    }
+
+    function createGameBoard() {
+        for (let y = 0; y < GRID_HEIGHT; y++) {
+            for (let x = 0; x < GRID_WIDTH; x++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                gameBoard.appendChild(cell);
+            }
+        }
+    }
     </script>
 </body>
 </html>
