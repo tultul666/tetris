@@ -28,7 +28,8 @@
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            padding: 10px 10px calc(env(safe-area-inset-bottom, 10px) + 10px) 10px;
+            /* No top padding to maximize space */
+            padding: 0 10px 0 10px;
         }
 
         #game-container {
@@ -38,14 +39,15 @@
             align-items: center;
             max-width: 350px;
             padding: 0;
+            margin-top: 0;
         }
 
         #stats {
             display: flex;
             justify-content: space-between;
             width: 100%;
-            padding: 0 10px 5px 10px;
-            margin-bottom: 5px;
+            margin: 0;
+            padding: 0 10px;
             font-size: 18px;
             font-weight: bold;
             color: #ff1493;
@@ -59,8 +61,9 @@
             background-color: #feedf6;
             box-shadow: 0 4px 20px rgba(255, 105, 180, 0.4);
             overflow: hidden;
-            /* Réduire la hauteur pour montrer plus de boutons */
-            padding-bottom: 160%; /* Ratio réduit */
+            /* Reduced height even more */
+            padding-bottom: 130%; /* Reduced ratio */
+            margin-top: 5px;
         }
 
         #game-board {
@@ -71,8 +74,8 @@
             height: 100%;
             display: grid;
             grid-template-columns: repeat(10, 1fr);
-            /* Réduire le nombre de lignes de 20 à 16 */
-            grid-template-rows: repeat(16, 1fr);
+            /* Reduced to 13 rows (removed 3 more rows) */
+            grid-template-rows: repeat(13, 1fr);
         }
 
         .cell {
@@ -89,16 +92,17 @@
             max-width: 350px;
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            padding: 8px;
-            margin-top: 10px;
+            gap: 6px;
+            padding: 6px;
+            /* Moved up by reducing margin-top */
+            margin-top: 5px;
         }
 
         .control-btn {
             background-color: #ff69b4;
             border: none;
             color: white;
-            padding: 12px 0;
+            padding: 10px 0;
             text-align: center;
             font-size: 18px;
             border-radius: 15px;
@@ -136,6 +140,7 @@
             grid-column: 1 / span 3;
             grid-row: 3;
             background-color: #7b68ee;
+            padding: 8px 0;
         }
 
         #game-over {
@@ -144,7 +149,7 @@
             left: 50%;
             transform: translate(-50%, -50%);
             background-color: rgba(255, 20, 147, 0.9);
-            padding: 20px;
+            padding: 15px;
             border-radius: 15px;
             text-align: center;
             display: none;
@@ -155,8 +160,8 @@
         }
         
         #game-over h2 {
-            font-size: 24px;
-            margin-bottom: 10px;
+            font-size: 22px;
+            margin: 0 0 10px 0;
             text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
             animation: heartbeat 1.5s infinite;
         }
@@ -168,10 +173,10 @@
             transform: translate(-50%, -50%);
             background-color: rgba(255, 105, 180, 0.9);
             color: white;
-            padding: 15px;
+            padding: 10px;
             border-radius: 15px;
             text-align: center;
-            font-size: 20px;
+            font-size: 18px;
             display: none;
             width: 80%;
             max-width: 300px;
@@ -190,7 +195,7 @@
 
         .heart {
             color: red;
-            font-size: 24px;
+            font-size: 20px;
             display: inline-block;
             animation: float 2s infinite ease-in-out;
         }
@@ -205,8 +210,8 @@
             background-color: #ff69b4;
             border: none;
             color: white;
-            padding: 10px 20px;
-            margin-top: 10px;
+            padding: 8px 15px;
+            margin-top: 5px;
             font-size: 16px;
             border-radius: 30px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -245,9 +250,9 @@
     </div>
 
     <script>
-        // Réduire la hauteur de la grille de 20 à 16
+        // Réduire la hauteur de la grille à 13 (enlevé 3 rangées de plus)
         const GRID_WIDTH = 10;
-        const GRID_HEIGHT = 16;
+        const GRID_HEIGHT = 13;
         const COLORS = ['#ff5e9f', '#ffb6c1', '#ff69b4', '#ff1493', '#db7093', '#c71585', '#ff00ff'];
         const SHAPES = [
             [[1, 1, 1, 1]],                 // I
@@ -708,27 +713,27 @@
 
         // Show love message
         function showLoveMessage(message) {
-            loveMessage.innerHTML = message + ' <span class="heart">❤️</span><span class="heart" style="animation-delay: 0.2s;">❤️</span><span class="heart" style="animation-delay: 0.4s;">❤️</span>';
+            loveMessage.innerHTML = message + ' <span class="heart">❤️</span><span class="heart" style="animation-delay: 0.2s;">❤️</span>';
             loveMessage.style.display = 'block';
             
             setTimeout(() => {
                 loveMessage.style.display = 'none';
-            }, 2000);
+            }, 1500);
         }
 
         // Get random love message
         function getRandomLoveMessage() {
             const messages = [
                 "Je t'aime Geneviève ❤️",
-                "Tu es extraordinaire Geneviève ❤️",
-                "Mon cœur t'appartient Geneviève ❤️",
-                "Tu es mon soleil Geneviève ❤️",
-                "Ensemble pour toujours Geneviève ❤️",
-                "Tu illumines ma vie Geneviève ❤️",
-                "Je pense à toi Geneviève ❤️",
-                "Tu es parfaite Geneviève ❤️",
-                "À jamais avec toi Geneviève ❤️",
-                "Je ne veux que toi Geneviève ❤️"
+                "Tu es extraordinaire ❤️",
+                "Mon cœur t'appartient ❤️",
+                "Tu es mon soleil ❤️",
+                "Ensemble pour toujours ❤️",
+                "Tu illumines ma vie ❤️",
+                "Je pense à toi ❤️",
+                "Tu es parfaite ❤️",
+                "À jamais avec toi ❤️",
+                "Je ne veux que toi ❤️"
             ];
             
             return messages[Math.floor(Math.random() * messages.length)];
@@ -752,7 +757,7 @@
             setTimeout(() => { flash.style.opacity = '0'; }, 300);
             setTimeout(() => { flash.remove(); }, 600);
             
-            showLoveMessage(`Niveau ${level} ! Geneviève, tu es la meilleure !`);
+            showLoveMessage(`Niveau ${level} ! Tu es la meilleure !`);
         }
 
         // Create heart confetti animation
