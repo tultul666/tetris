@@ -112,31 +112,168 @@
     window.addEventListener('orientationchange', setViewportHeight);
     window.addEventListener('load', setViewportHeight);
 
-    document.addEventListener("DOMContentLoaded", () => {
-        document.querySelectorAll('.control-btn').forEach(button => {
-            button.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
-        });
-        init();
-    });
-
-    // Code de jeu minimal
-    const gameBoard = document.getElementById('game-board');
+    // Configuration du jeu
     const GRID_WIDTH = 10;
     const GRID_HEIGHT = 20;
+    const COLORS = ["#ff5e9f", "#ffb6c1", "#ff69b4", "#ff1493", "#db7093", "#c71585", "#ff00ff"];
+    const SHAPES = [
+        [[1, 1, 1, 1]],
+        [[1, 1], [1, 1]],
+        [[1, 1, 1], [0, 1, 0]],
+        [[1, 1, 1], [1, 0, 0]],
+        [[1, 1, 1], [0, 0, 1]],
+        [[0, 1, 1], [1, 1, 0]],
+        [[1, 1, 0], [0, 1, 1]]
+    ];
+
+    let grid = [];
+    let currentPiece = null;
+    let currentPos = { x: 0, y: 0 };
+    let gameInterval;
+
+    const gameBoard = document.getElementById("game-board");
 
     function init() {
         createGameBoard();
+        grid = Array.from({ length: GRID_HEIGHT }, () => Array(GRID_WIDTH).fill(0));
+        spawnPiece();
+        gameInterval = setInterval(step, 700);
     }
 
     function createGameBoard() {
+        gameBoard.innerHTML = "";
         for (let y = 0; y < GRID_HEIGHT; y++) {
             for (let x = 0; x < GRID_WIDTH; x++) {
-                const cell = document.createElement('div');
-                cell.classList.add('cell');
+                const cell = document.createElement("div");
+                cell.classList.add("cell");
+                cell.dataset.x = x;
+                cell.dataset.y = y;
                 gameBoard.appendChild(cell);
             }
         }
     }
+
+    function spawnPiece() {
+        const index = Math.floor(Math.random() * SHAPES.length);
+        currentPiece = { shape: SHAPES[index], color: COLORS[index] };
+        currentPos = { x: 3, y: 0 };
+        draw();
+    }
+
+    function draw() {
+        updateBoard();
+        currentPiece.shape.forEach((row, y) => {
+            row.forEach((val, x) => {
+                if (val) {
+                    const cell = document.querySelector(`.cell[data-x='${currentPos.x + x}'][data-y='${currentPos.y + y}']`);
+                    if (cell) {
+                        cell.style.backgroundColor = currentPiece.color;
+                        cell.classList.add("filled");
+                    }
+                }
+            });
+        });
+    }
+
+    function updateBoard() {
+        document.querySelectorAll(".cell").forEach(cell => {
+            cell.style.backgroundColor = "";
+            cell.classList.remove("filled");
+        });
+        for (let y = 0; y < GRID_HEIGHT; y++) {
+            for (let x = 0; x < GRID_WIDTH; x++) {
+                if (grid[y][x]) {
+                    const cell = document.querySelector(`.cell[data-x='${x}'][data-y='${y}']`);
+                    if (cell) {
+                        cell.style.backgroundColor = grid[y][x];
+                        cell.classList.add("filled");
+                    }
+                }
+            }
+        }
+    }
+
+    function step() {
+        erase();
+        currentPos.y++;
+        if (!valid()) {
+            currentPos.y--;
+            lock();
+            spawnPiece();
+        }
+        draw();
+    }
+
+    function erase() {
+        currentPiece.shape.forEach((row, y) => {
+            row.forEach((val, x) => {
+                if (val) {
+                    const cell = document.querySelector(`.cell[data-x='${currentPos.x + x}'][data-y='${currentPos.y + y}']`);
+                    if (cell) {
+                        cell.style.backgroundColor = "";
+                        cell.classList.remove("filled");
+                    }
+                }
+            });
+        });
+    }
+
+    function valid() {
+        return currentPiece.shape.every((row, y) => {
+            return row.every((val, x) => {
+                if (!val) return true;
+                const newX = currentPos.x + x;
+                const newY = currentPos.y + y;
+                return newX >= 0 && newX < GRID_WIDTH && newY < GRID_HEIGHT && (!grid[newY] || !grid[newY][newX]);
+            });
+        });
+    }
+
+    function lock() {
+        currentPiece.shape.forEach((row, y) => {
+            row.forEach((val, x) => {
+                if (val) {
+                    grid[currentPos.y + y][currentPos.x + x] = currentPiece.color;
+                }
+            });
+        });
+    }
+
+    document.getElementById("left-btn").addEventListener("touchstart", () => {
+        erase();
+        currentPos.x--;
+        if (!valid()) currentPos.x++;
+        draw();
+    }, { passive: false });
+
+    document.getElementById("right-btn").addEventListener("touchstart", () => {
+        erase();
+        currentPos.x++;
+        if (!valid()) currentPos.x--;
+        draw();
+    }, { passive: false });
+
+    document.getElementById("down-btn").addEventListener("touchstart", () => {
+        step();
+    }, { passive: false });
+
+    document.getElementById("rotate-btn").addEventListener("touchstart", () => {
+        erase();
+        const rotated = currentPiece.shape[0].map((_, i) => currentPiece.shape.map(row => row[i]).reverse());
+        const original = currentPiece.shape;
+        currentPiece.shape = rotated;
+        if (!valid()) currentPiece.shape = original;
+        draw();
+    }, { passive: false });
+
+    document.getElementById("drop-btn").addEventListener("touchstart", () => {
+        erase();
+        while (valid()) currentPos.y++;
+        currentPos.y--;
+        draw();
+        lock();
+        spawnPiece();
+    }, { passive: false });
     </script>
 </body>
 </html>
