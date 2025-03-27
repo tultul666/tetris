@@ -13,8 +13,8 @@
             font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
             touch-action: manipulation;
             overflow: hidden;
-            height: 100%;
-            width: 100%;
+            height: 100dvh;
+            width: 100vw;
         }
 
         body {
@@ -73,7 +73,7 @@
             max-width: 320px;
             gap: 10px;
             margin-top: 20px;
-            padding-bottom: 20px; /* spacing for iOS toolbar */
+            padding-bottom: 20px;
         }
 
         .control-btn {
@@ -104,6 +104,17 @@
             grid-column: 1 / span 3;
             grid-row: 3;
             background-color: #7b68ee;
+        }
+
+        #start-btn {
+            margin-top: 15px;
+            background-color: #ff69b4;
+            color: white;
+            padding: 12px 25px;
+            font-size: 16px;
+            border-radius: 30px;
+            border: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
         #audio-control {
@@ -144,11 +155,13 @@
         <button id="drop-btn" class="control-btn">DROP</button>
     </div>
 
+    <button id="start-btn">🎮 Démarrer le jeu</button>
     <button id="audio-control">🎵 Musique</button>
 
     <script>
         const music = document.getElementById('bg-music');
         const musicBtn = document.getElementById('audio-control');
+        const startBtn = document.getElementById('start-btn');
         let musicPlaying = false;
 
         musicBtn.addEventListener('click', () => {
@@ -160,6 +173,14 @@
                 music.play();
                 musicPlaying = true;
                 musicBtn.textContent = '⏸️ Pause';
+            }
+        });
+
+        startBtn.addEventListener('click', () => {
+            if (!window.gameStarted) {
+                window.dispatchEvent(new Event('load'));
+                window.gameStarted = true;
+                startBtn.style.display = 'none';
             }
         });
     </script>
