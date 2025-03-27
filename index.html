@@ -28,13 +28,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            padding-top: env(safe-area-inset-top, 10px);
-            padding-bottom: calc(env(safe-area-inset-bottom, 10px) + 10px);
-            /* Éviter les problèmes de marge sur Safari */
-            -webkit-margin-before: 0;
-            -webkit-margin-after: 0;
-            -webkit-margin-start: 0;
-            -webkit-margin-end: 0;
+            padding: 10px 10px calc(env(safe-area-inset-bottom, 10px) + 10px) 10px;
         }
 
         #game-container {
@@ -43,15 +37,15 @@
             flex-direction: column;
             align-items: center;
             max-width: 350px;
-            padding: 0 10px;
+            padding: 0;
         }
 
         #stats {
             display: flex;
             justify-content: space-between;
             width: 100%;
-            padding: 5px 10px;
-            margin-bottom: 10px;
+            padding: 0 10px 5px 10px;
+            margin-bottom: 5px;
             font-size: 18px;
             font-weight: bold;
             color: #ff1493;
@@ -65,8 +59,8 @@
             background-color: #feedf6;
             box-shadow: 0 4px 20px rgba(255, 105, 180, 0.4);
             overflow: hidden;
-            /* Forcer un ratio précis */
-            padding-bottom: 200%; /* Ratio 1:2 (10:20) */
+            /* Réduire la hauteur pour montrer plus de boutons */
+            padding-bottom: 160%; /* Ratio réduit */
         }
 
         #game-board {
@@ -77,7 +71,8 @@
             height: 100%;
             display: grid;
             grid-template-columns: repeat(10, 1fr);
-            grid-template-rows: repeat(20, 1fr);
+            /* Réduire le nombre de lignes de 20 à 16 */
+            grid-template-rows: repeat(16, 1fr);
         }
 
         .cell {
@@ -94,16 +89,16 @@
             max-width: 350px;
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            padding: 10px;
-            margin-top: 15px;
+            gap: 8px;
+            padding: 8px;
+            margin-top: 10px;
         }
 
         .control-btn {
             background-color: #ff69b4;
             border: none;
             color: white;
-            padding: 15px 0;
+            padding: 12px 0;
             text-align: center;
             font-size: 18px;
             border-radius: 15px;
@@ -161,7 +156,7 @@
         
         #game-over h2 {
             font-size: 24px;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
             animation: heartbeat 1.5s infinite;
         }
@@ -210,8 +205,8 @@
             background-color: #ff69b4;
             border: none;
             color: white;
-            padding: 12px 25px;
-            margin-top: 15px;
+            padding: 10px 20px;
+            margin-top: 10px;
             font-size: 16px;
             border-radius: 30px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
@@ -250,8 +245,9 @@
     </div>
 
     <script>
+        // Réduire la hauteur de la grille de 20 à 16
         const GRID_WIDTH = 10;
-        const GRID_HEIGHT = 20;
+        const GRID_HEIGHT = 16;
         const COLORS = ['#ff5e9f', '#ffb6c1', '#ff69b4', '#ff1493', '#db7093', '#c71585', '#ff00ff'];
         const SHAPES = [
             [[1, 1, 1, 1]],                 // I
