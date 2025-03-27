@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tetris Mobile</title>
     <style>
-        /* Ajout de styles pour éviter que la barre de navigation ne gêne */
         body {
             margin: 0;
             padding: 0;
@@ -19,17 +18,6 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
-        }
-
-        /* Pour Safari */
-        @media only screen and (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) {
-            /* Pour iPhone X et similaires */
-            body {
-                padding-top: env(safe-area-inset-top);
-                padding-bottom: env(safe-area-inset-bottom);
-                padding-left: env(safe-area-inset-left);
-                padding-right: env(safe-area-inset-right);
-            }
         }
 
         #game-container {
@@ -473,4 +461,371 @@
 
         function endGame() {
             clearInterval(gameLoop);
-            gameOver
+            gameOver = true;
+            finalScoreElement.textContent = score;
+            
+            // Ajouter des confettis de cœurs
+            createHeartConfetti();
+            
+            // Afficher le message
+            gameOverElement.style.display = 'block';
+        }
+        
+        function createHeartConfetti() {
+            // Créer 30 cœurs qui vont tomber
+            for (let i = 0; i < 30; i++) {
+                const heart = document.createElement('div');
+                heart.innerHTML = '❤️';
+                heart.style.position = 'fixed';
+                heart.style.fontSize = Math.random() * 15 + 10 + 'px';
+                heart.style.left = Math.random() * 100 + '%';
+                heart.style.top = '-20px';
+                heart.style.opacity = Math.random() * 0.7 + 0.3;
+                heart.style.zIndex = '1000';
+                heart.style.transform = `rotate(${Math.random() * 360}deg)`;
+                heart.style.transition = 'all 3s ease-out';
+                document.body.appendChild(heart);
+                
+                // Animation de chute
+                setTimeout(() => {
+                    heart.style.top = '120%';
+                    heart.style.left = parseInt(heart.style.left) + (Math.random() * 40 - 20) + '%';
+                    heart.style.transform = `rotate(${Math.random() * 360 + 360}deg)`;
+                }, 100);
+                
+                // Supprimer après l'animation
+                setTimeout(() => {
+                    heart.remove();
+                }, 3100);
+            }
+        }
+
+        function isValidPosition() {
+            for (let y = 0; y < currentPiece.shape.length; y++) {
+                for (let x = 0; x < currentPiece.shape[y].length; x++) {
+                    if (!currentPiece.shape[y][x]) continue;
+                    
+                    const boardX = currentPiecePos.x + x;
+                    const boardY = currentPiecePos.y + y;
+                    
+                    // Vérifier les bords de la grille
+                    if (boardX < 0 || boardX >= GRID_WIDTH || boardY >= GRID_HEIGHT) {
+                        return false;
+                    }
+                    
+                    // Vérifier la collision avec des pièces existantes
+                    if (boardY >= 0 && grid[boardY][boardX]) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        function drawPiece() {
+            for (let y = 0; y < currentPiece.shape.length; y++) {
+                for (let x = 0; x < currentPiece.shape[y].length; x++) {
+                    if (!currentPiece.shape[y][x]) continue;
+                    
+                    const boardX = currentPiecePos.x + x;
+                    const boardY = currentPiecePos.y + y;
+                    
+                    // Ne dessiner que les cellules visibles
+                    if (boardY >= 0) {
+                        const cell = document.querySelector(`.cell[data-x="${boardX}"][data-y="${boardY}"]`);
+                        if (cell) {
+                            cell.style.backgroundColor = currentPiece.color;
+                            cell.classList.add('filled');
+                        }
+                    }
+                }
+            }
+        }
+
+        function erasePiece() {
+            for (let y = 0; y < currentPiece.shape.length; y++) {
+                for (let x = 0; x < currentPiece.shape[y].length; x++) {
+                    if (!currentPiece.shape[y][x]) continue;
+                    
+                    const boardX = currentPiecePos.x + x;
+                    const boardY = currentPiecePos.y + y;
+                    
+                    if (boardY >= 0) {
+                        const cell = document.querySelector(`.cell[data-x="${boardX}"][data-y="${boardY}"]`);
+                        if (cell) {
+                            cell.style.backgroundColor = '';
+                            cell.classList.remove('filled');
+                        }
+                    }
+                }
+            }
+        }
+
+        function lockPiece() {
+            for (let y = 0; y < currentPiece.shape.length; y++) {
+                for (let x = 0; x < currentPiece.shape[y].length; x++) {
+                    if (!currentPiece.shape[y][x]) continue;
+                    
+                    const boardX = currentPiecePos.x + x;
+                    const boardY = currentPiecePos.y + y;
+                    
+                    if (boardY >= 0) {
+                        grid[boardY][boardX] = currentPiece.color;
+                    }
+                }
+            }
+            // Redessiner la grille pour s'assurer que les pièces verrouillées sont visibles
+            redrawBoard();
+        }
+
+        function checkLines() {
+            let linesCleared = 0;
+            
+            for (let y = GRID_HEIGHT - 1; y >= 0; y--) {
+                if (grid[y].every(cell => cell !== 0)) {
+                    // Ligne complète
+                    linesCleared++;
+                    
+                    // Supprimer la ligne
+                    for (let y2 = y; y2 > 0; y2--) {
+                        grid[y2] = [...grid[y2-1]];
+                    }
+                    
+                    // Nouvelle ligne vide en haut
+                    grid[0] = Array(GRID_WIDTH).fill(0);
+                    
+                    // Redessiner la grille
+                    redrawBoard();
+                    
+                    // Afficher le message d'amour
+                    showLoveMessage();
+                    
+                    // Vérifier à nouveau la même ligne
+                    y++;
+                }
+            }
+            
+            return linesCleared;
+        }
+        
+        function showLoveMessage() {
+            // Sélectionner un message d'amour aléatoire
+            const messages = [
+                "Je t'aime Geneviève ❤️",
+                "Tu es extraordinaire Geneviève ❤️",
+                "Mon cœur t'appartient Geneviève ❤️",
+                "Tu es mon soleil Geneviève ❤️",
+                "Ensemble pour toujours Geneviève ❤️",
+                "Tu illumines ma vie Geneviève ❤️",
+                "Je pense à toi Geneviève ❤️",
+                "Tu es parfaite Geneviève ❤️",
+                "À jamais avec toi Geneviève ❤️",
+                "Je ne veux que toi Geneviève ❤️"
+            ];
+            
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            
+            // Afficher le message
+            const loveMessageElement = document.getElementById('love-message');
+            loveMessageElement.innerHTML = randomMessage + ' <span class="heart">❤️</span><span class="heart" style="animation-delay: 0.2s;">❤️</span><span class="heart" style="animation-delay: 0.4s;">❤️</span>';
+            loveMessageElement.style.display = 'block';
+            
+            // Faire disparaître le message après 2 secondes
+            setTimeout(() => {
+                loveMessageElement.style.display = 'none';
+            }, 2000);
+        }
+
+        function redrawBoard() {
+            // Redessiner toute la grille
+            for (let y = 0; y < GRID_HEIGHT; y++) {
+                for (let x = 0; x < GRID_WIDTH; x++) {
+                    const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+                    if (cell) {
+                        if (grid[y][x]) {
+                            cell.style.backgroundColor = grid[y][x];
+                            cell.classList.add('filled');
+                        } else {
+                            cell.style.backgroundColor = '';
+                            cell.classList.remove('filled');
+                        }
+                    }
+                }
+            }
+            
+            // Ajouter un log pour débogage
+            console.log("Grille mise à jour:", JSON.parse(JSON.stringify(grid)));
+        }
+
+        function updateScore(linesCleared = 0) {
+            if (linesCleared > 0) {
+                // Points basés sur le nombre de lignes et le niveau
+                const points = [0, 100, 300, 500, 800][linesCleared] * level;
+                score += points;
+                
+                // Augmenter le niveau tous les 5 lignes (au lieu de 10)
+                const newLevel = Math.floor(score / 500) + 1;
+                if (newLevel > level) {
+                    level = newLevel;
+                    gameSpeed = Math.max(100, 800 - (level - 1) * 100);
+                    clearInterval(gameLoop);
+                    gameLoop = setInterval(gameStep, gameSpeed);
+                    
+                    // Afficher une animation spéciale lors du changement de niveau
+                    showLevelUpAnimation();
+                }
+            }
+            
+            scoreElement.textContent = score;
+            levelElement.textContent = level;
+        }
+        
+        function showLevelUpAnimation() {
+            // Créer un effet de flash pour signaler le changement de niveau
+            const flash = document.createElement('div');
+            flash.style.position = 'fixed';
+            flash.style.top = '0';
+            flash.style.left = '0';
+            flash.style.width = '100%';
+            flash.style.height = '100%';
+            flash.style.backgroundColor = 'rgba(255, 105, 180, 0.3)';
+            flash.style.zIndex = '999';
+            flash.style.opacity = '0';
+            flash.style.transition = 'opacity 0.3s ease-in-out';
+            document.body.appendChild(flash);
+            
+            // Animation de flash
+            setTimeout(() => { flash.style.opacity = '1'; }, 50);
+            setTimeout(() => { flash.style.opacity = '0'; }, 300);
+            setTimeout(() => { flash.remove(); }, 600);
+            
+            // Afficher un message de niveau supérieur
+            const loveMessageElement = document.getElementById('love-message');
+            loveMessageElement.innerHTML = `Niveau ${level} ! Geneviève, tu es la meilleure ! <span class="heart">❤️</span>`;
+            loveMessageElement.style.display = 'block';
+            
+            setTimeout(() => {
+                loveMessageElement.style.display = 'none';
+            }, 2000);
+        }
+
+        function rotatePiece() {
+            if (gameOver) return;
+            
+            erasePiece();
+            
+            // Sauvegarde de la forme actuelle
+            const originalShape = currentPiece.shape;
+            
+            // Calculer la nouvelle forme (rotation 90° horaire)
+            const rows = currentPiece.shape.length;
+            const cols = currentPiece.shape[0].length;
+            
+            const rotated = Array.from({ length: cols }, () => 
+                Array.from({ length: rows }, () => 0)
+            );
+            
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    rotated[x][rows - 1 - y] = currentPiece.shape[y][x];
+                }
+            }
+            
+            currentPiece.shape = rotated;
+            
+            // Vérifier si la rotation est valide
+            if (!isValidPosition()) {
+                // Annuler la rotation si non valide
+                currentPiece.shape = originalShape;
+            }
+            
+            drawPiece();
+        }
+
+        function movePieceLeft() {
+            if (gameOver) return;
+            
+            erasePiece();
+            currentPiecePos.x--;
+            
+            if (!isValidPosition()) {
+                currentPiecePos.x++;
+            }
+            
+            drawPiece();
+        }
+
+        function movePieceRight() {
+            if (gameOver) return;
+            
+            erasePiece();
+            currentPiecePos.x++;
+            
+            if (!isValidPosition()) {
+                currentPiecePos.x--;
+            }
+            
+            drawPiece();
+        }
+
+        function movePieceDown() {
+            if (gameOver) return;
+            
+            erasePiece();
+            currentPiecePos.y++;
+            
+            if (!isValidPosition()) {
+                currentPiecePos.y--;
+                drawPiece(); // Redessine la pièce à sa position finale
+                lockPiece();
+                
+                const linesCleared = checkLines();
+                if (linesCleared > 0) {
+                    updateScore(linesCleared);
+                }
+                
+                createNewPiece();
+            } else {
+                drawPiece();
+            }
+        }
+
+        function dropPiece() {
+            if (gameOver) return;
+            
+            erasePiece();
+            
+            // Descendre jusqu'à ce qu'on ne puisse plus
+            let dropDistance = 0;
+            while (true) {
+                currentPiecePos.y++;
+                if (!isValidPosition()) {
+                    currentPiecePos.y--;
+                    break;
+                }
+                dropDistance++;
+            }
+            
+            // Bonus de score pour drop
+            score += dropDistance;
+            updateScore();
+            
+            // Dessiner la pièce à sa position finale
+            drawPiece();
+            
+            // Verrouiller la pièce dans la grille
+            lockPiece();
+            
+            const linesCleared = checkLines();
+            if (linesCleared > 0) {
+                updateScore(linesCleared);
+            }
+            
+            createNewPiece();
+        }
+
+        // Démarrer le jeu
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
