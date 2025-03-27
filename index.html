@@ -51,17 +51,22 @@
             color: #ff1493;
         }
 
+        #game-board-container {
+            width: 100%;
+            position: relative;
+            border: 2px solid #ff69b4;
+            border-radius: 8px;
+            background-color: #feedf6;
+            box-shadow: 0 4px 20px rgba(255, 105, 180, 0.4);
+            overflow: hidden;
+        }
+
         #game-board {
             width: 100%;
             display: grid;
             grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(20, 1fr);
             aspect-ratio: 10/20;
-            border: 2px solid #ff69b4;
-            background-color: #feedf6;
-            box-shadow: 0 4px 20px rgba(255, 105, 180, 0.4);
-            border-radius: 8px;
-            overflow: hidden;
-            max-height: 65vh;
         }
 
         .cell {
@@ -207,17 +212,19 @@
             <div>Score: <span id="score">0</span></div>
             <div>Level: <span id="level">1</span></div>
         </div>
-        <div id="game-board"></div>
-        <div id="game-over">
-            <h2>Geneviève je t'aime !</h2>
-            <p>Score final: <span id="final-score">0</span></p>
-            <button id="restart-btn">Rejouer</button>
-        </div>
-        <div id="love-message">
-            Je t'aime mon amour 
-            <span class="heart">❤️</span>
-            <span class="heart" style="animation-delay: 0.2s;">❤️</span>
-            <span class="heart" style="animation-delay: 0.4s;">❤️</span>
+        <div id="game-board-container">
+            <div id="game-board"></div>
+            <div id="game-over">
+                <h2>Geneviève je t'aime !</h2>
+                <p>Score final: <span id="final-score">0</span></p>
+                <button id="restart-btn">Rejouer</button>
+            </div>
+            <div id="love-message">
+                Je t'aime mon amour 
+                <span class="heart">❤️</span>
+                <span class="heart" style="animation-delay: 0.2s;">❤️</span>
+                <span class="heart" style="animation-delay: 0.4s;">❤️</span>
+            </div>
         </div>
     </div>
     
@@ -252,7 +259,7 @@
         let gameSpeed = 800;
         let gameOver = false;
         let lastTapTime = 0;
-        let isFirstPiece = true; // Pour suivre la première pièce
+        let isFirstPiece = true;
         let debugMode = false;
 
         // DOM Elements
@@ -275,6 +282,7 @@
         function initGame() {
             createBoard();
             setupControls();
+            adjustGameBoard();
             startGame();
         }
 
@@ -290,6 +298,27 @@
                     gameBoard.appendChild(cell);
                 }
             }
+        }
+
+        // Adjust game board to make sure it fits correctly
+        function adjustGameBoard() {
+            const gameBoardContainer = document.getElementById('game-board-container');
+            
+            // Make sure the game board has the correct aspect ratio
+            gameBoard.style.display = 'grid';
+            gameBoard.style.gridTemplateColumns = `repeat(${GRID_WIDTH}, 1fr)`;
+            gameBoard.style.gridTemplateRows = `repeat(${GRID_HEIGHT}, 1fr)`;
+            
+            // Force the cells to have equal width and height
+            const cellWidth = gameBoard.offsetWidth / GRID_WIDTH;
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                cell.style.width = `${cellWidth}px`;
+                cell.style.height = `${cellWidth}px`;
+            });
+            
+            // Ensure container height matches the grid
+            gameBoardContainer.style.height = `${cellWidth * GRID_HEIGHT}px`;
         }
 
         // Setup control buttons
@@ -563,7 +592,7 @@
                         const boardX = currentPosition.x + x;
                         const boardY = currentPosition.y + y;
                         
-                        if (boardY >= 0) {
+                        if (boardY >= 0 && boardY < GRID_HEIGHT) {
                             const cell = document.querySelector(`.cell[data-x="${boardX}"][data-y="${boardY}"]`);
                             if (cell) {
                                 cell.style.backgroundColor = currentPiece.color;
@@ -583,7 +612,7 @@
                         const boardX = currentPosition.x + x;
                         const boardY = currentPosition.y + y;
                         
-                        if (boardY >= 0) {
+                        if (boardY >= 0 && boardY < GRID_HEIGHT) {
                             const cell = document.querySelector(`.cell[data-x="${boardX}"][data-y="${boardY}"]`);
                             if (cell) {
                                 cell.style.backgroundColor = '';
@@ -777,14 +806,19 @@
         // Fix iOS height issues
         function fixIOSHeight() {
             document.body.style.height = window.innerHeight + 'px';
+            adjustGameBoard();
         }
+
+        // Handle resize and orientation changes
+        window.addEventListener('resize', fixIOSHeight);
+        window.addEventListener('orientationchange', () => {
+            setTimeout(fixIOSHeight, 300); // Attendre un peu après le changement d'orientation
+        });
 
         // Start the game when the page loads
         window.addEventListener('DOMContentLoaded', () => {
             initGame();
             fixIOSHeight();
-            window.addEventListener('resize', fixIOSHeight);
-            window.addEventListener('orientationchange', fixIOSHeight);
         });
 
         // Prevent Safari from doing pull-to-refresh
