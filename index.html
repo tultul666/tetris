@@ -473,45 +473,4 @@
 
         function endGame() {
             clearInterval(gameLoop);
-            gameOver = true;
-            finalScoreElement.textContent = score;
-            
-            // Ajouter des confettis de cœurs
-            createHeartConfetti();
-            
-            // Afficher le message
-            gameOverElement.style.display = 'block';
-        }
-        
-        function createHeartConfetti() {
-            // Créer 30 cœurs qui vont tomber
-            for (let i = 0; i < 30; i++) {
-                const heart = document.createElement('div');
-                heart.innerHTML = '❤️';
-                heart.style.position = 'fixed';
-                heart.style.fontSize = Math.random() * 15 + 10 + 'px';
-                heart.style.left = Math.random() * 100 + '%';
-                heart.style.top = '-20px';
-                heart.style.opacity = Math.random() * 0.7 + 0.3;
-                heart.style.zIndex = '1000';
-                heart.style.transform = `rotate(${Math.random() * 360}deg)`;
-                heart.style.transition = 'all 3s ease-out';
-                document.body.appendChild(heart);
-                
-                // Animation de chute
-                setTimeout(() => {
-                    heart.style.top = '120%';
-                    heart.style.left = parseInt(heart.style.left) + (Math.random() * 40 - 20) + '%';
-                    heart.style.transform = `rotate(${Math.random() * 360 + 360}deg)`;
-                }, 100);
-                
-                // Supprimer après l'animation
-                setTimeout(() => {
-                    heart.remove();
-                }, 3100);
-            }
-        }
-
-        function isValidPosition() {
-            for (let y = 0; y < currentPiece.shape.length; y++) {
-                for (let x =
+            gameOver
