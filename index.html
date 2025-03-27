@@ -252,6 +252,8 @@
         let gameSpeed = 800;
         let gameOver = false;
         let lastTapTime = 0;
+        let isFirstPiece = true; // Pour suivre la première pièce
+        let debugMode = false;
 
         // DOM Elements
         const gameBoard = document.getElementById('game-board');
@@ -261,6 +263,13 @@
         const finalScoreElement = document.getElementById('final-score');
         const restartBtn = document.getElementById('restart-btn');
         const loveMessage = document.getElementById('love-message');
+
+        // Fonction de débogage
+        function log(message) {
+            if (debugMode) {
+                console.log(message);
+            }
+        }
 
         // Initialize the game
         function initGame() {
@@ -316,8 +325,16 @@
                 dropCurrentPiece();
             });
 
-            document.getElementById('restart-btn').addEventListener('touchstart', (e) => {
+            // Correction du bouton rejouer avec une meilleure gestion des événements
+            restartBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
+                startGame();
+            }, { passive: false });
+            
+            restartBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 startGame();
             });
 
@@ -326,7 +343,12 @@
         }
 
         function handleKeyPress(e) {
-            if (gameOver) return;
+            if (gameOver) {
+                if (e.key === 'Enter') {
+                    startGame();
+                }
+                return;
+            }
             
             switch(e.key) {
                 case 'ArrowUp': rotateCurrentPiece(); break;
@@ -334,16 +356,22 @@
                 case 'ArrowRight': moveCurrentPiece(1, 0); break;
                 case 'ArrowDown': moveCurrentPiece(0, 1); break;
                 case ' ': dropCurrentPiece(); break;
+                case 'd': debugMode = !debugMode; console.log("Debug mode: " + debugMode); break;
             }
         }
 
         // Start a new game
         function startGame() {
+            log("Starting new game");
             grid = createEmptyGrid();
             score = 0;
             level = 1;
             gameSpeed = 800;
             gameOver = false;
+            isFirstPiece = true;
+            
+            // S'assurer que toutes les cellules sont vides visuellement
+            clearAllCells();
             
             updateScore();
             createNewPiece();
@@ -355,6 +383,15 @@
             
             // Show welcome message
             showLoveMessage("Tetris pour Geneviève ❤️");
+        }
+
+        // Clear all cells visually
+        function clearAllCells() {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                cell.style.backgroundColor = '';
+                cell.classList.remove('filled');
+            });
         }
 
         // Create empty grid
@@ -390,13 +427,19 @@
 
         // Move the current piece down one step
         function moveDown() {
+            if (gameOver) return;
+            
             if (!moveCurrentPiece(0, 1)) {
                 // Piece can't move down - lock it and create a new one
                 lockPiece();
+                
                 const linesCleared = clearLines();
                 if (linesCleared > 0) {
                     updateScore(linesCleared);
                 }
+                
+                isFirstPiece = false; // Première pièce déjà placée
+                
                 if (!createNewPiece()) {
                     clearInterval(gameInterval);
                 }
@@ -405,6 +448,8 @@
 
         // Drop the piece to the bottom
         function dropCurrentPiece() {
+            if (gameOver) return;
+            
             let dropDistance = 0;
             erasePiece();
             
@@ -424,11 +469,14 @@
                 updateScore(linesCleared);
             }
             
+            isFirstPiece = false; // Première pièce déjà placée
             createNewPiece();
         }
 
         // Move the current piece
         function moveCurrentPiece(deltaX, deltaY) {
+            if (gameOver) return false;
+            
             erasePiece();
             
             if (isValidMove(deltaX, deltaY)) {
@@ -444,7 +492,7 @@
 
         // Rotate the current piece
         function rotateCurrentPiece() {
-            if (gameOver) return;
+            if (gameOver) return false;
             
             erasePiece();
             
@@ -549,18 +597,35 @@
 
         // Lock the current piece in the grid
         function lockPiece() {
+            log("Locking piece at position: " + JSON.stringify(currentPosition));
+            
             for (let y = 0; y < currentPiece.shape.length; y++) {
                 for (let x = 0; x < currentPiece.shape[y].length; x++) {
                     if (currentPiece.shape[y][x]) {
                         const boardX = currentPosition.x + x;
                         const boardY = currentPosition.y + y;
                         
-                        if (boardY >= 0) {
+                        if (boardY >= 0 && boardY < GRID_HEIGHT && boardX >= 0 && boardX < GRID_WIDTH) {
                             grid[boardY][boardX] = currentPiece.color;
+                            log(`Cell locked at [${boardX}, ${boardY}]`);
                         }
                     }
                 }
             }
+            
+            // Pour le débogage: afficher la grille actuelle
+            if (debugMode) {
+                let gridDebug = "";
+                for (let y = 0; y < GRID_HEIGHT; y++) {
+                    let row = "";
+                    for (let x = 0; x < GRID_WIDTH; x++) {
+                        row += grid[y][x] ? "X" : ".";
+                    }
+                    gridDebug += row + "\n";
+                }
+                log("Grid state after locking:\n" + gridDebug);
+            }
+            
             redrawBoard();
         }
 
@@ -571,6 +636,7 @@
             for (let y = GRID_HEIGHT - 1; y >= 0; y--) {
                 if (grid[y].every(cell => cell !== 0)) {
                     linesCleared++;
+                    log(`Complete line found: ${y}`);
                     
                     // Remove the completed line
                     for (let tempY = y; tempY > 0; tempY--) {
@@ -580,7 +646,7 @@
                     // Add a new empty line at the top
                     grid[0] = Array(GRID_WIDTH).fill(0);
                     
-                    // We need to check this line again
+                    // We need to check this line again since it now contains content from above
                     y++;
                 }
             }
