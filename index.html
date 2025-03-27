@@ -1,184 +1,517 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Tetris Mobile</title>
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      background-color: #ffebf5;
-      color: white;
-      font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
-      touch-action: manipulation;
-      height: 100dvh;
-      width: 100vw;
-      overflow: hidden;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tetris Mobile</title>
+    <style>
+        /* Ajout de styles pour éviter que la barre de navigation ne gêne */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #ffebf5;
+            color: white;
+            font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+            touch-action: manipulation;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
 
-    body {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      position: fixed;
-      inset: 0;
-      padding-bottom: env(safe-area-inset-bottom);
-      background-color: #ffebf5;
-    }
+        /* Pour Safari */
+        @media only screen and (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) {
+            /* Pour iPhone X et similaires */
+            body {
+                padding-top: env(safe-area-inset-top);
+                padding-bottom: env(safe-area-inset-bottom);
+                padding-left: env(safe-area-inset-left);
+                padding-right: env(safe-area-inset-right);
+            }
+        }
 
-    #game-container {
-      position: relative;
-      width: 100%;
-      max-width: 320px;
-      margin: 0 auto;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 320px;
+            margin: 0 auto;
+        }
 
-    #game-board {
-      display: grid;
-      grid-template-columns: repeat(10, 1fr);
-      width: 100%;
-      aspect-ratio: 10 / 20;
-      border: 2px solid #ff69b4;
-      background-color: #feedf6;
-      box-shadow: 0 4px 20px rgba(255, 105, 180, 0.4);
-      border-radius: 8px;
-      overflow: hidden;
-    }
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            width: 100%;
+            aspect-ratio: 10/20;
+            border: 2px solid #ff69b4;
+            background-color: #feedf6;
+            box-shadow: 0 4px 20px rgba(255, 105, 180, 0.4);
+            border-radius: 8px;
+            overflow: hidden;
+        }
 
-    .cell {
-      border: 1px solid rgba(255, 105, 180, 0.2);
-      aspect-ratio: 1 / 1;
-    }
+        .cell {
+            border: 1px solid rgba(255, 105, 180, 0.2);
+            aspect-ratio: 1/1;
+        }
 
-    .filled {
-      border: 1px solid rgba(255, 255, 255, 0.5);
-      box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.6);
-    }
+        .filled {
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.6);
+        }
 
-    #stats {
-      display: flex;
-      justify-content: space-between;
-      width: 100%;
-      margin: 10px 0;
-      font-size: 18px;
-      color: #ff1493;
-      font-weight: bold;
-      text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.7);
-    }
+        #stats {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin: 10px 0;
+            font-size: 18px;
+            color: #ff1493;
+            font-weight: bold;
+            text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.7);
+        }
 
-    #controls {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      width: 100%;
-      max-width: 320px;
-      gap: 10px;
-      margin-top: 20px;
-      margin-bottom: env(safe-area-inset-bottom);
-      z-index: 10;
-    }
+        #controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            width: 100%;
+            max-width: 320px;
+            gap: 10px;
+            margin-top: 20px;
+        }
 
-    .control-btn {
-      background-color: #ff69b4;
-      border: none;
-      color: white;
-      padding: 15px 0;
-      text-align: center;
-      font-size: 18px;
-      border-radius: 15px;
-      touch-action: manipulation;
-      user-select: none;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      transition: all 0.2s ease;
-    }
+        .control-btn {
+            background-color: #ff69b4;
+            border: none;
+            color: white;
+            padding: 15px 0;
+            text-align: center;
+            font-size: 18px;
+            border-radius: 15px;
+            touch-action: manipulation;
+            user-select: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+        }
 
-    .control-btn:active {
-      background-color: #ff1493;
-      transform: scale(0.95);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    }
+        .control-btn:active {
+            background-color: #ff1493;
+            transform: scale(0.95);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
 
-    #rotate-btn { grid-column: 2; }
-    #left-btn   { grid-column: 1; grid-row: 2; }
-    #right-btn  { grid-column: 3; grid-row: 2; }
-    #down-btn   { grid-column: 2; grid-row: 2; }
-    #drop-btn   {
-      grid-column: 1 / span 3;
-      grid-row: 3;
-      background-color: #7b68ee;
-    }
+        #rotate-btn {
+            grid-column: 2;
+        }
 
-    #start-btn, #audio-control {
-      margin-top: 10px;
-      background-color: #ff69b4;
-      color: white;
-      padding: 10px 20px;
-      font-size: 16px;
-      border-radius: 30px;
-      border: none;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    }
-  </style>
+        #left-btn {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        #right-btn {
+            grid-column: 3;
+            grid-row: 2;
+        }
+
+        #down-btn {
+            grid-column: 2;
+            grid-row: 2;
+        }
+
+        #drop-btn {
+            grid-column: 1 / span 3;
+            grid-row: 3;
+            background-color: #7b68ee;
+        }
+
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 20, 147, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            color: white;
+            box-shadow: 0 0 25px rgba(255, 105, 180, 0.8);
+        }
+        
+        #game-over h2 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+            animation: heartbeat 1.5s infinite;
+        }
+
+        #love-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 105, 180, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 20px;
+            display: none;
+            width: 80%;
+            max-width: 300px;
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+            animation: heartbeat 1s infinite;
+            z-index: 100;
+            font-weight: bold;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes heartbeat {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .heart {
+            color: red;
+            font-size: 24px;
+            display: inline-block;
+            margin: 0 3px;
+            animation: float 2s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0); }
+        }
+
+        #restart-btn {
+            background-color: #ff69b4;
+            border: none;
+            color: white;
+            padding: 12px 25px;
+            margin-top: 15px;
+            font-size: 16px;
+            border-radius: 30px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        #restart-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+    </style>
 </head>
 <body>
-  <div id="game-container">
-    <div id="stats">
-      <div>Score: <span id="score">0</span></div>
-      <div>Level: <span id="level">1</span></div>
+    <div id="game-container">
+        <div id="stats">
+            <div>Score: <span id="score">0</span></div>
+            <div>Level: <span id="level">1</span></div>
+        </div>
+        <div id="game-board"></div>
+        <div id="game-over">
+            <h2>Geneviève je t'aime !</h2>
+            <p>Score final: <span id="final-score">0</span></p>
+            <button id="restart-btn">Rejouer</button>
+        </div>
+        <div id="love-message">
+            Je t'aime mon amour 
+            <span class="heart">❤️</span>
+            <span class="heart" style="animation-delay: 0.2s;">❤️</span>
+            <span class="heart" style="animation-delay: 0.4s;">❤️</span>
+        </div>
     </div>
-    <div id="game-board"></div>
-    <div id="game-over">
-      <h2>Geneviève je t'aime !</h2>
-      <p>Score final: <span id="final-score">0</span></p>
-      <button id="restart-btn">Rejouer</button>
+    
+    <div id="controls">
+        <button id="rotate-btn" class="control-btn">↻</button>
+        <button id="left-btn" class="control-btn">←</button>
+        <button id="down-btn" class="control-btn">↓</button>
+        <button id="right-btn" class="control-btn">→</button>
+        <button id="drop-btn" class="control-btn">DROP</button>
     </div>
-    <div id="love-message">Je t'aime mon amour ❤️❤️❤️</div>
-    <audio id="bg-music" loop>
-      <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_3f7c8be8ee.mp3" type="audio/mpeg">
-    </audio>
-  </div>
 
-  <div id="controls">
-    <button id="rotate-btn" class="control-btn">↻</button>
-    <button id="left-btn" class="control-btn">←</button>
-    <button id="down-btn" class="control-btn">↓</button>
-    <button id="right-btn" class="control-btn">→</button>
-    <button id="drop-btn" class="control-btn">DROP</button>
-  </div>
+    <script>
+        // Configuration du jeu
+        const GRID_WIDTH = 10;
+        const GRID_HEIGHT = 20;
+        const COLORS = [
+            '#ff5e9f', // Rose vif
+            '#ffb6c1', // Rose clair
+            '#ff69b4', // Rose chaud
+            '#ff1493', // Rose profond
+            '#db7093', // Rose pâle
+            '#c71585', // Rose magenta
+            '#ff00ff'  // Magenta
+        ];
 
-  <button id="start-btn">🎮 Démarrer le jeu</button>
-  <button id="audio-control">🎵 Musique</button>
+        // Formes des pièces (tetrominos)
+        const SHAPES = [
+            [[1, 1, 1, 1]],  // I
+            [[1, 1], [1, 1]],  // O
+            [[1, 1, 1], [0, 1, 0]],  // T
+            [[1, 1, 1], [1, 0, 0]],  // J
+            [[1, 1, 1], [0, 0, 1]],  // L
+            [[0, 1, 1], [1, 1, 0]],  // S
+            [[1, 1, 0], [0, 1, 1]]   // Z
+        ];
 
-  <script>
-    const music = document.getElementById('bg-music');
-    const musicBtn = document.getElementById('audio-control');
-    const startBtn = document.getElementById('start-btn');
-    let musicPlaying = false;
+        // Variables du jeu
+        let grid = createEmptyGrid();
+        let currentPiece = null;
+        let currentPiecePos = { x: 0, y: 0 };
+        let gameLoop = null;
+        let score = 0;
+        let level = 1;
+        let gameSpeed = 1000; // Millisecondes entre les déplacements vers le bas
+        let gameOver = false;
 
-    musicBtn.addEventListener('click', () => {
-      if (musicPlaying) {
-        music.pause();
-        musicPlaying = false;
-        musicBtn.textContent = '🎵 Musique';
-      } else {
-        music.play();
-        musicPlaying = true;
-        musicBtn.textContent = '⏸️ Pause';
-      }
-    });
+        // Éléments DOM
+        const gameBoard = document.getElementById('game-board');
+        const scoreElement = document.getElementById('score');
+        const levelElement = document.getElementById('level');
+        const gameOverElement = document.getElementById('game-over');
+        const finalScoreElement = document.getElementById('final-score');
+        const restartBtn = document.getElementById('restart-btn');
 
-    startBtn.addEventListener('click', () => {
-      if (!window.gameStarted) {
-        window.dispatchEvent(new Event('load'));
-        window.gameStarted = true;
-        startBtn.style.display = 'none';
-      }
-    });
-  </script>
-</body>
-</html>
+        // Boutons de contrôle
+        const rotateBtn = document.getElementById('rotate-btn');
+        const leftBtn = document.getElementById('left-btn');
+        const rightBtn = document.getElementById('right-btn');
+        const downBtn = document.getElementById('down-btn');
+        const dropBtn = document.getElementById('drop-btn');
+
+        // Initialisation du jeu
+        function init() {
+            // Création de la grille visuelle
+            createGameBoard();
+            
+            // Démarrer le jeu
+            startGame();
+
+            // Événements de contrôle
+            setupControls();
+        }
+
+        function createGameBoard() {
+            gameBoard.innerHTML = '';
+            for (let y = 0; y < GRID_HEIGHT; y++) {
+                for (let x = 0; x < GRID_WIDTH; x++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    gameBoard.appendChild(cell);
+                }
+            }
+        }
+
+        function setupControls() {
+            // Variables pour le double-clic
+            let lastDownClickTime = 0;
+            const doubleClickThreshold = 300; // millisecondes
+            
+            // Boutons tactiles
+            rotateBtn.addEventListener('touchstart', rotatePiece);
+            leftBtn.addEventListener('touchstart', movePieceLeft);
+            
+            // Gestion du double-clic pour la descente rapide
+            downBtn.addEventListener('touchstart', (e) => {
+                const currentTime = new Date().getTime();
+                const timeDiff = currentTime - lastDownClickTime;
+                
+                if (timeDiff < doubleClickThreshold) {
+                    // Double-clic détecté, faire un drop
+                    dropPiece();
+                } else {
+                    // Clic simple, mouvement normal vers le bas
+                    movePieceDown();
+                }
+                
+                lastDownClickTime = currentTime;
+                e.preventDefault();
+            });
+            
+            rightBtn.addEventListener('touchstart', movePieceRight);
+            dropBtn.addEventListener('touchstart', dropPiece);
+            restartBtn.addEventListener('touchstart', restartGame);
+            
+            // Support clavier pour tester sur desktop
+            document.addEventListener('keydown', handleKeyPress);
+            
+            // Prévenir les comportements par défaut pour éviter le défilement
+            document.querySelectorAll('.control-btn').forEach(button => {
+                button.addEventListener('touchstart', e => e.preventDefault());
+            });
+        }
+
+        function handleKeyPress(e) {
+            if (gameOver) return;
+            
+            // Variable pour suivre le double appui de la flèche bas
+            if (!window.lastDownKeyTime) window.lastDownKeyTime = 0;
+            const doubleKeyThreshold = 300; // millisecondes
+            
+            switch(e.key) {
+                case 'ArrowUp':
+                    rotatePiece();
+                    break;
+                case 'ArrowLeft':
+                    movePieceLeft();
+                    break;
+                case 'ArrowRight':
+                    movePieceRight();
+                    break;
+                case 'ArrowDown':
+                    const currentTime = new Date().getTime();
+                    if (currentTime - window.lastDownKeyTime < doubleKeyThreshold) {
+                        // Double appui détecté
+                        dropPiece();
+                    } else {
+                        movePieceDown();
+                    }
+                    window.lastDownKeyTime = currentTime;
+                    break;
+                case ' ':
+                    dropPiece();
+                    break;
+            }
+        }
+
+        function startGame() {
+            grid = createEmptyGrid();
+            score = 0;
+            level = 1;
+            gameSpeed = 800; // Un peu plus rapide que l'original
+            gameOver = false;
+            
+            updateScore();
+            createNewPiece();
+            
+            if (gameLoop) clearInterval(gameLoop);
+            gameLoop = setInterval(gameStep, gameSpeed);
+            
+            gameOverElement.style.display = 'none';
+            
+            // Afficher un message au démarrage
+            showWelcomeMessage();
+        }
+        
+        function showWelcomeMessage() {
+            // Afficher un message de bienvenue romantique
+            const loveMessageElement = document.getElementById('love-message');
+            loveMessageElement.innerHTML = "Tetris pour Geneviève ❤️<span class='heart'>❤️</span><span class='heart'>❤️</span>";
+            loveMessageElement.style.display = 'block';
+            
+            // Faire disparaître le message après 3 secondes
+            setTimeout(() => {
+                loveMessageElement.style.display = 'none';
+            }, 3000);
+        }
+
+        function restartGame() {
+            startGame();
+        }
+
+        function createEmptyGrid() {
+            return Array.from({ length: GRID_HEIGHT }, () => 
+                Array.from({ length: GRID_WIDTH }, () => 0)
+            );
+        }
+
+        function createNewPiece() {
+            const randomIndex = Math.floor(Math.random() * SHAPES.length);
+            currentPiece = {
+                shape: SHAPES[randomIndex],
+                color: COLORS[randomIndex]
+            };
+            
+            // Position de départ au milieu en haut
+            currentPiecePos = {
+                x: Math.floor((GRID_WIDTH - currentPiece.shape[0].length) / 2),
+                y: 0
+            };
+            
+            // Vérifier si la nouvelle pièce peut être placée
+            if (!isValidPosition()) {
+                // Game over
+                endGame();
+            }
+            
+            drawPiece();
+        }
+
+        function gameStep() {
+            // Déplacer la pièce vers le bas
+            erasePiece();
+            currentPiecePos.y++;
+            
+            if (!isValidPosition()) {
+                // Replacer la pièce à sa position précédente
+                currentPiecePos.y--;
+                
+                // Dessiner la pièce à sa position finale
+                drawPiece();
+                
+                // Verrouiller la pièce dans la grille
+                lockPiece();
+                
+                // Vérifier les lignes complètes
+                const linesCleared = checkLines();
+                if (linesCleared > 0) {
+                    updateScore(linesCleared);
+                }
+                
+                createNewPiece();
+            } else {
+                drawPiece();
+            }
+        }
+
+        function endGame() {
+            clearInterval(gameLoop);
+            gameOver = true;
+            finalScoreElement.textContent = score;
+            
+            // Ajouter des confettis de cœurs
+            createHeartConfetti();
+            
+            // Afficher le message
+            gameOverElement.style.display = 'block';
+        }
+        
+        function createHeartConfetti() {
+            // Créer 30 cœurs qui vont tomber
+            for (let i = 0; i < 30; i++) {
+                const heart = document.createElement('div');
+                heart.innerHTML = '❤️';
+                heart.style.position = 'fixed';
+                heart.style.fontSize = Math.random() * 15 + 10 + 'px';
+                heart.style.left = Math.random() * 100 + '%';
+                heart.style.top = '-20px';
+                heart.style.opacity = Math.random() * 0.7 + 0.3;
+                heart.style.zIndex = '1000';
+                heart.style.transform = `rotate(${Math.random() * 360}deg)`;
+                heart.style.transition = 'all 3s ease-out';
+                document.body.appendChild(heart);
+                
+                // Animation de chute
+                setTimeout(() => {
+                    heart.style.top = '120%';
+                    heart.style.left = parseInt(heart.style.left) + (Math.random() * 40 - 20) + '%';
+                    heart.style.transform = `rotate(${Math.random() * 360 + 360}deg)`;
+                }, 100);
+                
+                // Supprimer après l'animation
+                setTimeout(() => {
+                    heart.remove();
+                }, 3100);
+            }
+        }
+
+        function isValidPosition() {
+            for (let y = 0; y < currentPiece.shape.length; y++) {
+                for (let x =
