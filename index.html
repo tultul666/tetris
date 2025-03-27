@@ -1,188 +1,184 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Tetris Mobile</title>
-    <style>
-        html, body {
-            margin: 0;
-            padding: 0;
-            background-color: #ffebf5;
-            color: white;
-            font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
-            touch-action: manipulation;
-            overflow: hidden;
-            height: 100dvh;
-            width: 100vw;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Tetris Mobile</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #ffebf5;
+      color: white;
+      font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+      touch-action: manipulation;
+      height: 100dvh;
+      width: 100vw;
+      overflow: hidden;
+    }
 
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            padding-bottom: env(safe-area-inset-bottom);
-        }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      inset: 0;
+      padding-bottom: env(safe-area-inset-bottom);
+      background-color: #ffebf5;
+    }
 
-        #game-container {
-            position: relative;
-            width: 100%;
-            max-width: 320px;
-            margin: 0 auto;
-        }
+    #game-container {
+      position: relative;
+      width: 100%;
+      max-width: 320px;
+      margin: 0 auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
 
-        #game-board {
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            width: 100%;
-            aspect-ratio: 10/20;
-            border: 2px solid #ff69b4;
-            background-color: #feedf6;
-            box-shadow: 0 4px 20px rgba(255, 105, 180, 0.4);
-            border-radius: 8px;
-            overflow: hidden;
-        }
+    #game-board {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      width: 100%;
+      aspect-ratio: 10 / 20;
+      border: 2px solid #ff69b4;
+      background-color: #feedf6;
+      box-shadow: 0 4px 20px rgba(255, 105, 180, 0.4);
+      border-radius: 8px;
+      overflow: hidden;
+    }
 
-        .cell {
-            border: 1px solid rgba(255, 105, 180, 0.2);
-            aspect-ratio: 1/1;
-        }
+    .cell {
+      border: 1px solid rgba(255, 105, 180, 0.2);
+      aspect-ratio: 1 / 1;
+    }
 
-        .filled {
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.6);
-        }
+    .filled {
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.6);
+    }
 
-        #stats {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            margin: 10px 0;
-            font-size: 18px;
-            color: #ff1493;
-            font-weight: bold;
-            text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.7);
-        }
+    #stats {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin: 10px 0;
+      font-size: 18px;
+      color: #ff1493;
+      font-weight: bold;
+      text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.7);
+    }
 
-        #controls {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            width: 100%;
-            max-width: 320px;
-            gap: 10px;
-            margin-top: 20px;
-            padding-bottom: 20px;
-        }
+    #controls {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      width: 100%;
+      max-width: 320px;
+      gap: 10px;
+      margin-top: 20px;
+      margin-bottom: env(safe-area-inset-bottom);
+      z-index: 10;
+    }
 
-        .control-btn {
-            background-color: #ff69b4;
-            border: none;
-            color: white;
-            padding: 15px 0;
-            text-align: center;
-            font-size: 18px;
-            border-radius: 15px;
-            touch-action: manipulation;
-            user-select: none;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            transition: all 0.2s ease;
-        }
+    .control-btn {
+      background-color: #ff69b4;
+      border: none;
+      color: white;
+      padding: 15px 0;
+      text-align: center;
+      font-size: 18px;
+      border-radius: 15px;
+      touch-action: manipulation;
+      user-select: none;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      transition: all 0.2s ease;
+    }
 
-        .control-btn:active {
-            background-color: #ff1493;
-            transform: scale(0.95);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
+    .control-btn:active {
+      background-color: #ff1493;
+      transform: scale(0.95);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
 
-        #rotate-btn { grid-column: 2; }
-        #left-btn   { grid-column: 1; grid-row: 2; }
-        #right-btn  { grid-column: 3; grid-row: 2; }
-        #down-btn   { grid-column: 2; grid-row: 2; }
-        #drop-btn   {
-            grid-column: 1 / span 3;
-            grid-row: 3;
-            background-color: #7b68ee;
-        }
+    #rotate-btn { grid-column: 2; }
+    #left-btn   { grid-column: 1; grid-row: 2; }
+    #right-btn  { grid-column: 3; grid-row: 2; }
+    #down-btn   { grid-column: 2; grid-row: 2; }
+    #drop-btn   {
+      grid-column: 1 / span 3;
+      grid-row: 3;
+      background-color: #7b68ee;
+    }
 
-        #start-btn {
-            margin-top: 15px;
-            background-color: #ff69b4;
-            color: white;
-            padding: 12px 25px;
-            font-size: 16px;
-            border-radius: 30px;
-            border: none;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        #audio-control {
-            margin-top: 15px;
-            background-color: #ff69b4;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 30px;
-            border: none;
-            font-size: 16px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-    </style>
+    #start-btn, #audio-control {
+      margin-top: 10px;
+      background-color: #ff69b4;
+      color: white;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 30px;
+      border: none;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+  </style>
 </head>
 <body>
-    <div id="game-container">
-        <div id="stats">
-            <div>Score: <span id="score">0</span></div>
-            <div>Level: <span id="level">1</span></div>
-        </div>
-        <div id="game-board"></div>
-        <div id="game-over">
-            <h2>Geneviève je t'aime !</h2>
-            <p>Score final: <span id="final-score">0</span></p>
-            <button id="restart-btn">Rejouer</button>
-        </div>
-        <div id="love-message">Je t'aime mon amour ❤️❤️❤️</div>
-        <audio id="bg-music" loop>
-            <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_3f7c8be8ee.mp3" type="audio/mpeg">
-        </audio>
+  <div id="game-container">
+    <div id="stats">
+      <div>Score: <span id="score">0</span></div>
+      <div>Level: <span id="level">1</span></div>
     </div>
-
-    <div id="controls">
-        <button id="rotate-btn" class="control-btn">↻</button>
-        <button id="left-btn" class="control-btn">←</button>
-        <button id="down-btn" class="control-btn">↓</button>
-        <button id="right-btn" class="control-btn">→</button>
-        <button id="drop-btn" class="control-btn">DROP</button>
+    <div id="game-board"></div>
+    <div id="game-over">
+      <h2>Geneviève je t'aime !</h2>
+      <p>Score final: <span id="final-score">0</span></p>
+      <button id="restart-btn">Rejouer</button>
     </div>
+    <div id="love-message">Je t'aime mon amour ❤️❤️❤️</div>
+    <audio id="bg-music" loop>
+      <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_3f7c8be8ee.mp3" type="audio/mpeg">
+    </audio>
+  </div>
 
-    <button id="start-btn">🎮 Démarrer le jeu</button>
-    <button id="audio-control">🎵 Musique</button>
+  <div id="controls">
+    <button id="rotate-btn" class="control-btn">↻</button>
+    <button id="left-btn" class="control-btn">←</button>
+    <button id="down-btn" class="control-btn">↓</button>
+    <button id="right-btn" class="control-btn">→</button>
+    <button id="drop-btn" class="control-btn">DROP</button>
+  </div>
 
-    <script>
-        const music = document.getElementById('bg-music');
-        const musicBtn = document.getElementById('audio-control');
-        const startBtn = document.getElementById('start-btn');
-        let musicPlaying = false;
+  <button id="start-btn">🎮 Démarrer le jeu</button>
+  <button id="audio-control">🎵 Musique</button>
 
-        musicBtn.addEventListener('click', () => {
-            if (musicPlaying) {
-                music.pause();
-                musicPlaying = false;
-                musicBtn.textContent = '🎵 Musique';
-            } else {
-                music.play();
-                musicPlaying = true;
-                musicBtn.textContent = '⏸️ Pause';
-            }
-        });
+  <script>
+    const music = document.getElementById('bg-music');
+    const musicBtn = document.getElementById('audio-control');
+    const startBtn = document.getElementById('start-btn');
+    let musicPlaying = false;
 
-        startBtn.addEventListener('click', () => {
-            if (!window.gameStarted) {
-                window.dispatchEvent(new Event('load'));
-                window.gameStarted = true;
-                startBtn.style.display = 'none';
-            }
-        });
-    </script>
+    musicBtn.addEventListener('click', () => {
+      if (musicPlaying) {
+        music.pause();
+        musicPlaying = false;
+        musicBtn.textContent = '🎵 Musique';
+      } else {
+        music.play();
+        musicPlaying = true;
+        musicBtn.textContent = '⏸️ Pause';
+      }
+    });
+
+    startBtn.addEventListener('click', () => {
+      if (!window.gameStarted) {
+        window.dispatchEvent(new Event('load'));
+        window.gameStarted = true;
+        startBtn.style.display = 'none';
+      }
+    });
+  </script>
 </body>
 </html>
